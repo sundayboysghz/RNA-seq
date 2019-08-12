@@ -1,0 +1,37 @@
+library(ggplot2)
+library(ggrepel)
+library(tidyverse)
+
+ggplot_de_gene <- function(mydata, DE_gene) {
+  mytitle <- substitute(mydata)
+  mydata$significant <- as.factor(mydata$pvalue < 0.05 & abs(mydata$log2FoldChange) > log2(1.5))
+  mydata$gene_NAME_new <- mydata$gene_NAME
+  mydata$gene_NAME_new[!mydata$gene_NAME %in% DE_gene] <- NA
+  
+  ggplot(mydata, aes(x = log2FoldChange, y = -log10(pvalue), size = -log10(pvalue)), color=significant) +
+    geom_point(alpha = 0.5, alpha = 0.5, col = "gray") +
+    xlim(-10,10) +
+    ylim(0, 20) +
+    geom_point(data = subset(mydata, log2FoldChange > log2(1.5) & pvalue < 0.05), alpha = 0.5, col = "#CC79A7") +
+    geom_point(data = subset(mydata, log2FoldChange < -log2(1.5) & pvalue < 0.05), alpha = 0.5, col = "#7777DD") +
+    geom_vline(xintercept = c(-log2(1.5), log2(1.5), -log2(2), log2(2)), col = c(rep("red", 2), rep("yellow", 2)),
+               lty = 4, lwd = 0.8, alpha = 0.8) + #增加横线
+    #geom_vline(xintercept = c(-log2(2), log2(2)), col = "yellow", lty = 4, lwd = 0.8, alpha = 0.8) +
+    geom_hline(yintercept = c(-log10(0.05), -log10(0.01)), col = c("red", "yellow"), lty = 4, lwd = 0.8, alpha = 0.8) + #增加竖线
+    #geom_hline(yintercept = -log10(0.01), col = "yellow", lty = 4, lwd = 0.8, alpha = 0.8) +
+    labs(x="log2 (fold change)",y="-log10 (adj.P.Val)") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    ggtitle(mytitle) +
+    theme_bw()+
+    scale_size_area() +
+    theme(panel.border = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),   
+          axis.line = element_line(colour = "black")) +
+    geom_point(data = mydata[mydata$gene_NAME %in% DE_gene,],
+               color = "black", fill = "cornsilk", size = 3.5, shape = 21) +#shape=21表示用空心圈代替实心圈
+    geom_text_repel(data = mydata[mydata$gene_NAME %in% DE_gene,], aes(label = gene_NAME_new), col = "black", size = 4) +#要显示的基因名字
+    #geom_rug(position = "jitter", size = .1) +#增加地毯图
+    scale_colour_hue(l = 45)
+    #geom_text(aes(label = mydata$gene_NAME_new), vjust = 1, position = "jitter", size = 3)
+}
